@@ -1,0 +1,7 @@
+azure-functions==1.21.3
+ibm-watsonx-ai==1.2.7
+
+WATSONX_API_KEY ="CU_AoDPLRa00dbeeyyBSwZW_Emn4hdT6eZ22rFV5Puga"
+WATSONX_URL = os.getenv("WATSONX_URL", "https://us-south.ml.cloud.ibm.com").rstrip("/")
+WATSONX_PROJECT_ID = os.getenv("WATSONX_PROJECT_ID", "075473a2-da4b-483d-ab44-cd7538922595")
+WATSONX_MODEL_ID = os.getenv("WATSONX_MODEL_ID", "meta-llama/llama-3-3-70b-instruct")  # sensible default

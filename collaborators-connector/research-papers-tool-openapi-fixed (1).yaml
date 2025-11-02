@@ -1,0 +1,163 @@
+openapi: 3.0.3
+info:
+  title: Research Papers Tool
+  version: "1.0.1"
+  description: |
+    HTTP API that returns research papers for a given topic.
+    Backed by Crossref (default) and arXiv (optional). Returns normalized JSON.
+
+servers:
+  - url: https://research-papers-tool.azurewebsites.net
+    description: Production
+  - url: http://localhost:7071
+    description: Local (func start)
+
+paths:
+  /api/papers:
+    get:
+      operationId: listPapers
+      summary: Search research papers by topic
+      description: >
+        Returns research papers matching the query. Uses Crossref by default, or arXiv if source=arxiv,
+        or merges both with source=both.
+      parameters:
+        - name: q
+          in: query
+          required: true
+          description: Topic or keywords to search for (URL-encoded).
+          schema:
+            type: string
+          example: graph neural networks
+        - name: source
+          in: query
+          required: false
+          description: Data source to query.
+          schema:
+            type: string
+            enum: [crossref, arxiv, both]
+            default: crossref
+        - name: limit
+          in: query
+          required: false
+          description: Max number of results to return (1–100).
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: offset
+          in: query
+          required: false
+          description: Zero-based offset for pagination.
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      responses:
+        "200":
+          description: Successful response with a list of papers
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PapersResponse'
+        "400":
+          description: Invalid request (e.g., missing q, invalid source)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    PapersResponse:
+      type: object
+      required: [count, offset, results]
+      properties:
+        query:
+          type: string
+          nullable: true
+          description: Echo of the input query.
+        source:
+          type: string
+          nullable: true
+          description: Echo of the selected source.
+          enum: [crossref, arxiv, both]
+        total:
+          type: integer
+          nullable: true
+          description: Total results reported by Crossref (arXiv does not provide totals).
+        count:
+          type: integer
+          description: Number of items in results.
+        offset:
+          type: integer
+          description: Offset used for this page.
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/PaperItem'
+    PaperItem:
+      type: object
+      required: [source, id, title, url, is_open_access]
+      properties:
+        source:
+          type: string
+          description: Origin of the record.
+          enum: [crossref, arxiv]
+        id:
+          type: string
+          description: DOI (Crossref) or arXiv ID.
+        title:
+          type: string
+        authors:
+          type: array
+          items:
+            type: string
+          description: List of author names (if available).
+        venue:
+          type: string
+          nullable: true
+          description: Journal, conference, or "arXiv".
+        publisher:
+          type: string
+          nullable: true
+          description: Publisher name (Crossref only).
+        categories:
+          description: arXiv categories when available.
+          nullable: true
+          type: array
+          items:
+            oneOf:
+              - type: string
+              - type: object
+                properties:
+                  term:
+                    type: string
+                  label:
+                    type: string
+                additionalProperties: true
+        year:
+          type: integer
+          nullable: true
+        doi:
+          type: string
+          nullable: true
+        url:
+          type: string
+          format: uri
+        pdf_url:
+          type: string
+          format: uri
+          nullable: true
+        abstract:
+          type: string
+          nullable: true
+        is_open_access:
+          type: boolean
+          description: True when a direct PDF link is available.
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string

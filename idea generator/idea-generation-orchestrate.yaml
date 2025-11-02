@@ -1,0 +1,169 @@
+openapi: 3.0.3
+info:
+  title: Idea Generation Tool
+  version: "1.0.1"
+  description: >
+    Azure Function wrapper that generates structured innovation ideas using watsonx.ai.
+servers:
+  - url: https://idea-generation-tool.azurewebsites.net
+components:
+  securitySchemes:
+    functionKey:
+      type: apiKey
+      in: query
+      name: code
+  schemas:
+    GenerateIdeasInput:
+      type: object
+      required: [topic, text]
+      properties:
+        topic:
+          type: string
+          description: Short problem/theme to ideate on.
+        text:
+          type: string
+          description: Source material to ground the ideas (notes, feedback, research, etc.).
+        n_ideas:
+          type: integer
+          minimum: 1
+          default: 5
+          description: Number of ideas to return.
+        model_id:
+          type: string
+          default: meta-llama/llama-3-3-70b-instruct
+          description: watsonx.ai model ID.
+        gen_params:
+          type: object
+          description: Optional generation parameters forwarded to watsonx.ai.
+          additionalProperties: true
+          properties:
+            decoding_method:
+              type: string
+              enum: [greedy, sample]
+              default: sample
+            max_new_tokens:
+              type: integer
+              default: 400
+            temperature:
+              type: number
+              format: float
+              default: 0.7
+            top_p:
+              type: number
+              format: float
+              default: 0.9
+            repetition_penalty:
+              type: number
+              format: float
+              default: 1.1
+    Idea:
+      type: object
+      required: [title, summary, first_step]
+      properties:
+        title:
+          type: string
+        summary:
+          type: string
+        first_step:
+          type: string
+    GenerateIdeasOutput:
+      type: object
+      required: [topic, ideas]
+      properties:
+        topic:
+          type: string
+        ideas:
+          type: array
+          items:
+            $ref: '#/components/schemas/Idea'
+        model_id:
+          type: string
+          description: The model used for this call.
+        used_sdk:
+          type: boolean
+          description: True if IBM SDK path was used; false if REST fallback was used.
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+
+security:
+  - functionKey: []
+
+paths:
+  /api/generate-ideas:
+    post:
+      operationId: generateIdeas
+      summary: Generate structured innovation ideas from topic and source text
+      description: Calls the Azure Function to invoke a watsonx model and return a strict-JSON list of ideas.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GenerateIdeasInput'
+            examples:
+              basic:
+                summary: Minimal example
+                value:
+                  topic: "Reducing parking congestion near city centers"
+                  text: |
+                    Survey feedback shows 38% of residents circle for 10–20 minutes
+                    at peak hours. Merchants say curb turnover is too low. The city
+                    plans to expand bus-only lanes on 3 corridors.
+                  n_ideas: 3
+              customModel:
+                summary: Specify model and params
+                value:
+                  topic: "Streamlining internal IT ticket triage"
+                  text: "27% of tickets are misrouted; average first response is 18h."
+                  n_ideas: 4
+                  model_id: "meta-llama/llama-3-3-70b-instruct"
+                  gen_params:
+                    decoding_method: "sample"
+                    max_new_tokens: 350
+                    temperature: 0.6
+                    top_p: 0.9
+                    repetition_penalty: 1.1
+      responses:
+        '200':
+          description: Successful generation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenerateIdeasOutput'
+              examples:
+                success:
+                  value:
+                    topic: "Reducing parking congestion near city centers"
+                    ideas:
+                      - title: "Dynamic Curb Pricing Lite"
+                        summary: "Pilot demand-based pricing on two busiest blocks using existing sensor feeds to reduce circling."
+                        first_step: "Enable sensor data feed and enact a 90-day pilot ordinance."
+                      - title: "Merchant-Validated 15-Minute Zones"
+                        summary: "Short-stay bays near shops with automated enforcement to improve turnover."
+                        first_step: "Stripe and sign 10 bays; enroll 25 merchants; run a 60-day test."
+                    model_id: "meta-llama/llama-3-3-70b-instruct"
+                    used_sdk: true
+        '400':
+          description: Bad request (missing/invalid inputs)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingFields:
+                  value:
+                    error: "Both 'topic' and 'text' are required."
+        '502':
+          description: Upstream model error or unparseable output
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                parseFail:
+                  value:
+                    error: "Failed to parse model output: Could not extract valid JSON from model output"

@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Watsonx IdeaGrid</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Segoe+UI:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --bg:#f5f6f8; --panel:#ffffff; --text:#1f2328; --muted:#616b7f;
+      --brand:#464feb; --brand-strong:#3a44e1; --border:#e5e7ef; --shadow:0 6px 20px rgba(0,0,0,.08);
+      --success:#1eb564;
+      --topbar-h:48px; --chanbar-h:auto; --rails-w:68px;
+    }
+    @media (prefers-color-scheme: dark){
+      :root{ --bg:#0f1116; --panel:#151823; --text:#e7e9f2; --muted:#9aa3b2; --border:#23283a; --shadow:none }
+    }
+
+    *{ box-sizing:border-box }
+    html, body { height:100%; }
+    body{
+      margin:0; font-family:"Segoe UI", system-ui, -apple-system, sans-serif; color:var(--text); background:var(--bg);
+      display:grid; grid-template-columns: var(--rails-w) 1fr; grid-template-rows: var(--topbar-h) 1fr;
+      grid-template-areas:"rail topbar" "rail main"; overflow:hidden;
+    }
+
+    /* Left rail */
+    .rail{ grid-area: rail; background:#20242f; display:flex; flex-direction:column; align-items:center; gap:12px; padding:10px 0; }
+    .rail .logo { width:48px; height:48px; border-radius:12px; background:#fff; display:grid; place-items:center; overflow:hidden; margin:6px 0 10px; box-shadow:0 6px 14px rgba(0,0,0,.25) }
+    .rail .logo img{ width:100%; height:100%; object-fit:cover }
+
+    /* Top bar */
+    .topbar{ grid-area: topbar; display:flex; align-items:center; gap:12px; padding:8px 12px; background:var(--panel); border-bottom:1px solid var(--border); box-shadow:var(--shadow); z-index:3 }
+    .app-title{ display:flex; align-items:center; gap:10px; font-weight:600; }
+    .presence{ display:inline-flex; align-items:center; gap:6px; color:var(--muted); font-size:12px }
+    .presence .dot{ width:8px; height:8px; border-radius:999px; background:var(--success); box-shadow:0 0 0 3px rgba(30,181,100,.18) }
+    .spacer{ flex:1 }
+    .me-chip{ display:flex; align-items:center; gap:8px; padding:6px 10px; background:var(--bg); border:1px solid var(--border); border-radius:999px; font-size:12px; color:var(--muted) }
+
+    /* Main column */
+    .main{ grid-area: main; display:flex; flex-direction:column; min-height:0; }
+
+    /* Channel header */
+    .chan-header{ display:flex; align-items:center; gap:18px; padding:18px 16px; border-bottom:1px solid var(--border); background:var(--panel) }
+    .avatar{ position:relative; width:88px; height:88px; border-radius:50%; overflow:hidden; flex:0 0 auto; box-shadow:0 10px 28px rgba(0,0,0,.18) }
+    .avatar img{ width:100%; height:100%; object-fit:cover }
+    .avatar::after{ content:""; position:absolute; inset:0; border:3px solid rgba(255,255,255,.9); border-radius:50%; pointer-events:none }
+    .chan-title{ display:flex; flex-direction:column }
+    .chan-title .name{ font-weight:700; font-size:18px }
+    .chan-title .sub{ font-size:12px; color:var(--muted) }
+
+    /* Chat surface */
+    .chat-panel{ position:relative; flex:1 1 auto; min-height:0; display:grid; grid-template-rows: 1fr auto; }
+    .chat-scroll{ min-height:0; overflow-y:auto; overscroll-behavior:contain; background:var(--bg); }
+    .chat-scroll::-webkit-scrollbar{ width:10px }
+    .chat-scroll::-webkit-scrollbar-thumb{ background:#d7d9e2; border-radius:999px }
+    @media (prefers-color-scheme: dark){ .chat-scroll::-webkit-scrollbar-thumb{ background:#2a2f43 } }
+
+    /* Orchestrate host fills the viewport area */
+    #wxo-host{ height:100%; padding:12px 16px 12px; }
+    #wxo-host iframe{ width:100%; height:100%; border:0; display:block }
+
+    /* Scroll-to-latest button */
+    .scroll-to-latest{ position:absolute; right:16px; bottom:16px; z-index:10; display:none; padding:8px 12px; border-radius:999px; font-weight:600; border:1px solid var(--border); background:var(--panel); box-shadow:var(--shadow); cursor:pointer }
+    .scroll-to-latest.show{ display:inline-flex }
+
+    .sr-only{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0 }
+  </style>
+
+  <script src="https://statics.teams.cdn.office.net/sdk/v1.12.0/js/MicrosoftTeams.min.js"></script>
+</head>
+<body>
+  <!-- Left navigation rail -->
+  <aside class="rail" aria-label="Teams app rail">
+    <div class="logo" title="Copaco"><img src="logo.jpg" alt="Copaco" /></div>
+  </aside>
+
+  <!-- Top application bar -->
+  <header class="topbar">
+    <div class="app-title">IdeaGrid</div>
+    <span class="presence"><span class="dot" aria-hidden="true"></span></span>
+    <div class="spacer"></div>
+    <div class="me-chip" id="user-email">Signed in</div>
+  </header>
+
+  <!-- Main column -->
+  <main class="main">
+    <div class="chan-header" role="banner">
+      <!-- BIG BOT AVATAR USING YOUR LOGO -->
+      <div class="avatar" aria-hidden="true">
+        <img src="logo.jpg" alt="" />
+      </div>
+      <div class="chan-title">
+        <span class="name">IdeaGrid</span>
+        <span class="sub">Powered by watsonx Orchestrate</span>
+      </div>
+    </div>
+
+    <section class="chat-panel" aria-label="Chat area">
+      <div class="chat-scroll" id="chatScroll">
+        <section id="wxo-host" role="region" aria-label="IdeaGrid chat"></section>
+      </div>
+      <button id="scrollBtn" class="scroll-to-latest" type="button">New messages — jump down</button>
+    </section>
+  </main>
+
+  <input type="hidden" id="userEmail" />
+
+  <script>
+    // Capture Teams email (optional)
+    document.addEventListener("DOMContentLoaded", () => {
+      if (window.microsoftTeams?.app) {
+        microsoftTeams.app.initialize().then(() => {
+          microsoftTeams.app.getContext().then((ctx) => {
+            const upn = ctx?.user?.userPrincipalName || "";
+            document.getElementById("userEmail").value = upn;
+            const pill = document.getElementById("user-email");
+            pill.textContent = upn ? upn : "Signed in";
+          });
+        });
+      }
+    });
+  </script>
+
+  <!-- Configure and load Orchestrate -->
+  <script>
+    window.wxOConfiguration = {
+      orchestrationID: "b2ceb342eac74f5aa125b445998672f4_401956d4-1150-4a37-aa05-e4e9b4e1b891",
+      hostURL: "https://ca-tor.watson-orchestrate.cloud.ibm.com",
+      deploymentPlatform: "ibmcloud",
+      crn: "crn:v1:bluemix:public:watsonx-orchestrate:ca-tor:a/b2ceb342eac74f5aa125b445998672f4:401956d4-1150-4a37-aa05-e4e9b4e1b891::",
+      chatOptions: { agentId: "4241a409-04dd-46fe-b713-5bfae3bd5195" },
+      layout: { form: "custom", showOrchestrateHeader: false }
+    };
+
+    window.addEventListener("DOMContentLoaded", () => {
+      const hostElement = document.getElementById("wxo-host");
+      window.wxOConfiguration.layout.customElement = hostElement;
+
+      const email = document.getElementById("userEmail").value;
+      if (email) {
+        window.wxOConfiguration.chatOptions.contextVariables = {
+          wxo_email_id: email,
+          wxo_user_name: email.split("@")[0]
+        };
+      }
+
+      const script = document.createElement("script");
+      script.src = `${window.wxOConfiguration.hostURL}/wxochat/wxoLoader.js?embed=true`;
+      script.addEventListener("load", function () {
+        if (window.wxoLoader?.init) { window.wxoLoader.init(); }
+      });
+      document.head.appendChild(script);
+    });
+  </script>
+
+  <!-- Scroll management (STATIC: no auto-scroll; user can jump manually) -->
+  <script>
+    (function () {
+      const scrollEl = document.getElementById('chatScroll');
+      const hostEl   = document.getElementById('wxo-host');
+      const btn      = document.getElementById('scrollBtn');
+      const NEAR_BOTTOM_PX = 40;
+      function atBottom() { return (scrollEl.scrollHeight - (scrollEl.scrollTop + scrollEl.clientHeight)) <= NEAR_BOTTOM_PX; }
+      function scrollToLatest() { scrollEl.scrollTo({ top: scrollEl.scrollHeight, behavior: 'smooth' }); btn.classList.remove('show'); }
+      const ob = new MutationObserver(() => { if (!atBottom()) btn.classList.add('show'); });
+      ob.observe(hostEl, { childList: true, subtree: true });
+      btn.addEventListener('click', scrollToLatest);
+      scrollEl.addEventListener('scroll', () => { if (atBottom()) btn.classList.remove('show'); });
+    })();
+  </script>
+</body>
+</html>

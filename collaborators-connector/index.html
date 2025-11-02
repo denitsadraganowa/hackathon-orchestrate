@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Watson Orchestrate – Embedded Chat</title>
+    <style>
+      html, body, #root { height: 100%; margin: 0; }
+    </style>
+  </head>
+  <body>
+    <!-- The chat will render directly inside this element -->
+    <div id="root"></div>
+
+    <script>
+      window.wxOConfiguration = {
+        orchestrationID: "b2ceb342eac74f5aa125b445998672f4_401956d4-1150-4a37-aa05-e4e9b4e1b891",
+        hostURL: "https://ca-tor.watson-orchestrate.cloud.ibm.com",
+        rootElementID: "root",            // ⟵ IMPORTANT: this must exist in the DOM
+        showLauncher: false,              // ⟵ Hide the launcher bubble
+        crn: "crn:v1:bluemix:public:watsonx-orchestrate:ca-tor:a/b2ceb342eac74f5aa125b445998672f4:401956d4-1150-4a37-aa05-e4e9b4e1b891::",
+        deploymentPlatform: "ibmcloud",
+        chatOptions: {
+          agentId: "4241a409-04dd-46fe-b713-5bfae3bd5195",
+          agentEnvironmentId: "6156aa57-18e9-4bcf-8ad7-541ecedaf33e"
+        }
+      };
+
+      // Load the widget in "embed" mode and initialize it
+      (function () {
+        const script = document.createElement('script');
+        script.src = `${window.wxOConfiguration.hostURL}/wxochat/wxoLoader.js?embed=true`;
+        script.addEventListener('load', function () {
+          wxoLoader.init();
+        });
+        document.head.appendChild(script);
+      })();
+    </script>
+  </body>
+</html>

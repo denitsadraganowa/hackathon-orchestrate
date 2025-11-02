@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>DeniBot Tab</title>
+  <script>
+    async function callFunction() {
+      const endpoint = "*****";
+
+      try {
+        const response = await fetch(endpoint, {
+          method: "GET",
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const result = await response.text(); // or use .json() if it returns JSON
+        document.getElementById("output").innerText = "Response: " + result;
+      } catch (error) {
+        console.error("Function call failed:", error);
+        document.getElementById("output").innerText = "Error: " + error.message;
+      }
+    }
+  </script>
+</head>
+<body style="font-family: sans-serif; padding: 2em;">
+  <h2>DeniBot – Internal Tab</h2>
+  <p>Click the button to trigger your Azure Function:</p>
+  <button onclick="callFunction()" style="padding: 10px 20px; font-size: 16px;">Call Azure Function</button>
+  <p id="output" style="margin-top: 1em; font-weight: bold;"></p>
+</body>
+</html>
