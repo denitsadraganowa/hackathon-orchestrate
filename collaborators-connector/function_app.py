@@ -27,7 +27,7 @@ KAGGLE_ENABLED = False
 try:
     import kaggle  # type: ignore
     kaggle_username = "denitsadraganova"
-    kaggle_key = "0b510b48476861cd7362c49efc60bbc0"
+    kaggle_key = "***"
     # Kaggle library uses ~/.kaggle/kaggle.json or env KAGGLE_USERNAME/KAGGLE_KEY
     if kaggle_username and kaggle_key:
         KAGGLE_ENABLED = True

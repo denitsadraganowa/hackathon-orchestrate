@@ -113,9 +113,9 @@ def call_watsonx_llm(prompt: str, *, model_id: Optional[str] = None) -> str:
         raise RuntimeError("ibm-watsonx-ai package not installed. Add 'ibm-watsonx-ai' to requirements.txt.")
 
     # Prefer ENV; (you used literals in your working code—keep if you must, but env is safer)
-    api_key = os.getenv("WATSONX_API_KEY") or "CU_AoDPLRa00dbeeyyBSwZW_Emn4hdT6eZ22rFV5Puga"
+    api_key = os.getenv("WATSONX_API_KEY") or "***"
     url = os.getenv("WATSONX_URL", "https://us-south.ml.cloud.ibm.com")
-    project_id = os.getenv("WATSONX_PROJECT_ID") or "075473a2-da4b-483d-ab44-cd7538922595"
+    project_id = os.getenv("WATSONX_PROJECT_ID") or "****"
     model_id = model_id or os.getenv("WATSONX_MODEL_ID", "meta-llama/llama-3-3-70b-instruct")
 
     if not api_key or not project_id:

@@ -137,9 +137,9 @@ def call_watsonx_llm(prompt: str, *, model_id: Optional[str] = None) -> str:
             "ibm-watsonx-ai package not installed. Add 'ibm-watsonx-ai' to requirements.txt."
         )
 
-    api_key = "CU_AoDPLRa00dbeeyyBSwZW_Emn4hdT6eZ22rFV5Puga"
+    api_key = "***"
     url = os.getenv("WATSONX_URL", "https://us-south.ml.cloud.ibm.com")
-    project_id = "075473a2-da4b-483d-ab44-cd7538922595"
+    project_id = "****"
     model_id = model_id or os.getenv("WATSONX_MODEL_ID", "meta-llama/llama-3-3-70b-instruct")
 
     if not api_key or not project_id:
